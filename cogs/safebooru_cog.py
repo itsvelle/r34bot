@@ -16,7 +16,7 @@ class SafebooruCog(GelbooruWatcherBaseCog):
             bot=bot,
             cog_name="Safebooru",
             api_base_url="https://safebooru.org/index.php",
-            default_tags="hatsune_miku 1girl",
+            default_tags="hatsune_miku",
             is_nsfw_site=False,
             command_group_name="safebooruwatch",
             main_command_name="safebooru",
@@ -37,7 +37,7 @@ class SafebooruCog(GelbooruWatcherBaseCog):
         self,
         interaction: discord.Interaction,
         tags: str,
-        hidden: typing.Optional[bool]
+        hidden: typing.Optional[bool] = None,
     ):
         """Slash command version of safebooru."""
         actual_tags = tags or self.default_tags
@@ -57,11 +57,12 @@ class SafebooruCog(GelbooruWatcherBaseCog):
         self,
         interaction: discord.Interaction,
         tags: str,
-        hidden: typing.Optional[bool],
+        hidden: typing.Optional[bool] = None,
     ):
         """Browse Safebooru results with navigation buttons."""
         actual_tags = tags or self.default_tags
         await self._browse_slash_command_logic(interaction, actual_tags, hidden)
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(SafebooruCog(bot))

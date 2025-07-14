@@ -15,7 +15,7 @@ class Rule34Cog(GelbooruWatcherBaseCog):
             bot=bot,
             cog_name="Rule34",
             api_base_url="https://api.rule34.xxx/index.php",
-            default_tags="kasane_teto breast_milk",  # Example default, will be overridden if tags are required
+            default_tags="kasane_teto",  # Example default, will be overridden if tags are required
             is_nsfw_site=True,
             command_group_name="r34watch",  # For potential use in base class messages
             main_command_name="rule34",  # For potential use in base class messages
@@ -26,14 +26,19 @@ class Rule34Cog(GelbooruWatcherBaseCog):
     # --- Slash Command ---
     @app_commands.allowed_contexts(dms=True, guilds=True, private_channels=True)
     @app_commands.command(
-        name="rule34", description="Get random image from Rule34 with specified tags", nsfw=True
+        name="rule34",
+        description="Get random image from Rule34 with specified tags",
+        nsfw=True,
     )
     @app_commands.describe(
         tags="The tags to search for (e.g., 'hatsune_miku rating:safe')",
         hidden="Set to True to make the response visible only to you (default: False)",
     )
     async def rule34_slash(
-        self, interaction: discord.Interaction, tags: str, hidden: typing.Optional[bool]
+        self,
+        interaction: discord.Interaction,
+        tags: str,
+        hidden: typing.Optional[bool] = None,
     ):
         """Slash command version of rule34."""
         # The _slash_command_logic method from the base cog will handle deferring the interaction.
@@ -42,14 +47,19 @@ class Rule34Cog(GelbooruWatcherBaseCog):
     # --- New Browse Command ---
     @app_commands.allowed_contexts(dms=True, guilds=True, private_channels=True)
     @app_commands.command(
-        name="rule34browse", description="Browse Rule34 results with navigation buttons", nsfw=True
+        name="rule34browse",
+        description="Browse Rule34 results with navigation buttons",
+        nsfw=True,
     )
     @app_commands.describe(
         tags="The tags to search for (e.g., 'hatsune_miku rating:safe')",
         hidden="Set to True to make the response visible only to you (default: False)",
     )
     async def rule34_browse_slash(
-        self, interaction: discord.Interaction, tags: str, hidden: typing.Optional[bool]
+        self,
+        interaction: discord.Interaction,
+        tags: str,
+        hidden: typing.Optional[bool] = None,
     ):
         """Browse Rule34 results with navigation buttons."""
         # The _browse_slash_command_logic method from the base cog will handle deferring the interaction.

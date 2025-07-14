@@ -4,6 +4,7 @@ import os
 import logging
 import asyncio
 from dotenv import load_dotenv
+from cogs.user_config_manager import UserConfigManager
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,20 +22,25 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
+
 # --- Bot Definition ---
 class SimpleBooruBot(commands.Bot):
     def __init__(self):
 
-        intents = discord.Intents.none() # Don't need intents for slash commands
+        intents = discord.Intents.none()  # Don't need intents for slash commands
         super().__init__(command_prefix="!", intents=intents)
+        self.user_config_manager = UserConfigManager(db_path="user_config.db")
 
     async def setup_hook(self):
         """The setup_hook is called when the bot is ready to start."""
         log.info("Running setup_hook...")
+        await self.user_config_manager.init_db()
         # Load the cogs.
         initial_extensions = [
             "cogs.rule34_cog",
             "cogs.safebooru_cog",
+            "cogs.settings_cog",
+            "cogs.utils_cog",
         ]
         for extension in initial_extensions:
             try:
@@ -53,6 +59,7 @@ class SimpleBooruBot(commands.Bot):
         log.info(f"Logged in as {self.user} (ID: {self.user.id})")
         log.info("Bot is ready and online!")
 
+
 # --- Main Execution ---
 async def main():
     """The main entry point for the bot."""
@@ -68,8 +75,11 @@ async def main():
         interaction: discord.Interaction, error: discord.app_commands.AppCommandError
     ):
         """A global error handler for all slash commands."""
-        log.error(f"An error occurred in command '{interaction.command.name if interaction.command else 'unknown'}': {error}", exc_info=True)
-        
+        log.error(
+            f"An error occurred in command '{interaction.command.name if interaction.command else 'unknown'}': {error}",
+            exc_info=True,
+        )
+
         # Prepare a user-friendly error message
         if isinstance(error, discord.app_commands.CommandOnCooldown):
             message = f"This command is on cooldown. Please try again in {error.retry_after:.2f} seconds."
@@ -90,13 +100,16 @@ async def main():
     try:
         await bot.start(BOT_TOKEN)
     except discord.LoginFailure:
-        log.error("FATAL: Improper token has been passed. Check your DISCORD_BOT_TOKEN.")
+        log.error(
+            "FATAL: Improper token has been passed. Check your DISCORD_BOT_TOKEN."
+        )
     except Exception as e:
         log.error(f"FATAL: An unexpected error occurred during bot startup: {e}")
     finally:
         if not bot.is_closed():
             await bot.close()
         log.info("Bot has been shut down.")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -2,3 +2,4 @@ discord.py-slipstream-fork
 aiohttp
 python-dotenv
 aiosqlite
+psutil

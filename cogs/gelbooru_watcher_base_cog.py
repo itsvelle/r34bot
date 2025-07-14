@@ -35,6 +35,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         post_url_template: str,
     ):
         self.bot = bot
+        self.user_config_manager = bot.user_config_manager
         self.cog_name = cog_name
         self.api_base_url = api_base_url
         self.default_tags = default_tags
@@ -44,7 +45,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         self.post_url_template = post_url_template
 
         self.session: typing.Optional[aiohttp.ClientSession] = None
-        
+
         # Initialize CacheManager
         db_path = f"{self.cog_name.lower()}_cache.db"
         self.cache_manager = CacheManager(db_path=db_path)
@@ -90,7 +91,6 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             "v_yuma_(vocaloid)": "vocaloid",
             "dex_(vocaloid)": "vocaloid",
             "daina_(vocaloid)": "vocaloid",
-
             # UTAU
             "kasane_teto": "utau",
             "defoko": "utau",
@@ -114,7 +114,6 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             "namine_ritsu_(utau)": "utau",
             "sekka_yufu": "utau",
             "sekka_yufu_(utau)": "utau",
-
             # Zenless Zone Zero
             "anby_demara": "zenless_zone_zero",
             "anton_ivanov": "zenless_zone_zero",
@@ -172,7 +171,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
 
         # Start the cache pruning loop as a background task.
         self.bot.loop.create_task(self.cache_manager.start_pruning_loop())
-        
+
         log.info(f"{self.cog_name}Cog loaded and tasks started.")
 
     async def cog_unload(self):
@@ -187,13 +186,15 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         positive_tags = set()
         negative_tags = set()
         for tag in tags_str.strip().lower().split():
-            if tag.startswith('-'):
+            if tag.startswith("-"):
                 negative_tags.add(tag[1:])
             elif tag:
                 positive_tags.add(tag)
         return positive_tags, negative_tags
 
-    def _filter_results(self, results: list, required_tags: set, excluded_tags: set) -> list:
+    def _filter_results(
+        self, results: list, required_tags: set, excluded_tags: set
+    ) -> list:
         """Filters a list of posts based on required and excluded tags."""
         if not required_tags and not excluded_tags:
             return results
@@ -201,7 +202,9 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         filtered_results = []
         for post in results:
             post_tags = set(post.get("tags", "").split())
-            if required_tags.issubset(post_tags) and not excluded_tags.intersection(post_tags):
+            if required_tags.issubset(post_tags) and not excluded_tags.intersection(
+                post_tags
+            ):
                 filtered_results.append(post)
         return filtered_results
 
@@ -213,14 +216,20 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         limit_override: typing.Optional[int] = None,
         hidden: bool = False,
     ) -> typing.Union[str, tuple[str, list], list]:
-        
-        # --- 1. Initial Setup & Defer ---
+
+        # --- 1. Tag Processing ---
+        tags_to_process = tags
+        if "-ai_generated" not in tags_to_process:
+            tags_to_process += " -ai_generated"
+
+        # --- 2. Initial Setup & Defer ---
         if not isinstance(interaction_or_ctx, str) and interaction_or_ctx:
             if self.is_nsfw_site:
                 channel = interaction_or_ctx.channel
-                is_nsfw_channel = (isinstance(channel, discord.TextChannel) and channel.is_nsfw()) or \
-                                  isinstance(channel, discord.DMChannel)
-                allow_in_non_nsfw = "rating:safe" in tags.lower()
+                is_nsfw_channel = (
+                    isinstance(channel, discord.TextChannel) and channel.is_nsfw()
+                ) or isinstance(channel, discord.DMChannel)
+                allow_in_non_nsfw = "rating:safe" in tags_to_process.lower()
                 if not is_nsfw_channel and not allow_in_non_nsfw:
                     return f"This command for {self.cog_name} can only be used in age-restricted (NSFW) channels, DMs, or with the `rating:safe` tag."
 
@@ -228,27 +237,33 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             if is_interaction and not interaction_or_ctx.response.is_done():
                 await interaction_or_ctx.response.defer(ephemeral=hidden)
             elif hasattr(interaction_or_ctx, "reply"):
-                await interaction_or_ctx.reply(f"Fetching data from {self.cog_name}, please wait...")
+                await interaction_or_ctx.reply(
+                    f"Fetching data from {self.cog_name}, please wait..."
+                )
 
         if not self.session or self.session.closed:
             self.session = aiohttp.ClientSession()
-            log.info(f"Recreated aiohttp.ClientSession in _fetch_posts_logic for {self.cog_name}")
+            log.info(
+                f"Recreated aiohttp.ClientSession in _fetch_posts_logic for {self.cog_name}"
+            )
 
-        # --- 2. Tag Parsing and Aliasing ---
-        original_positive_tags, original_negative_tags = self._parse_tags(tags)
-        
+        # --- 3. Tag Parsing and Aliasing ---
+        original_positive_tags, original_negative_tags = self._parse_tags(
+            tags_to_process
+        )
+
         api_tags_set = original_positive_tags.copy()
         for tag in list(api_tags_set):
             if tag in self.tag_aliases:
                 api_tags_set.remove(tag)
                 api_tags_set.add(self.tag_aliases[tag])
-        
+
         # Sort for consistent cache keys
         api_tags_str = " ".join(sorted(list(api_tags_set)))
 
         # --- 3. Cache Check ---
         cache_response = await self.cache_manager.get(api_tags_str)
-        
+
         source_data = []
         matched_cache_key = api_tags_str
 
@@ -256,79 +271,128 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         if cache_response:
             cached_results, is_stale, matched_cache_key = cache_response
             source_data = cached_results
-            
+
             if is_stale:
-                log.info(f"Stale cache hit for '{tags}' using key '{matched_cache_key}'. Performing incremental fetch.")
-                latest_id = max(int(p['id']) for p in cached_results) if cached_results else 0
-                
+                log.info(
+                    f"Stale cache hit for '{tags}' using key '{matched_cache_key}'. Performing incremental fetch."
+                )
+                latest_id = (
+                    max(int(p["id"]) for p in cached_results) if cached_results else 0
+                )
+
                 newly_fetched_posts = []
-                for page in range(10): # Fetch up to 10 pages of new content
-                    api_params = {"page": "dapi", "s": "post", "q": "index", "limit": 1000, "pid": page, "tags": matched_cache_key, "json": 1}
+                for page in range(10):  # Fetch up to 10 pages of new content
+                    api_params = {
+                        "page": "dapi",
+                        "s": "post",
+                        "q": "index",
+                        "limit": 1000,
+                        "pid": page,
+                        "tags": matched_cache_key,
+                        "json": 1,
+                    }
                     try:
-                        async with self.session.get(self.api_base_url, params=api_params) as response:
+                        async with self.session.get(
+                            self.api_base_url, params=api_params
+                        ) as response:
                             if response.status == 200:
                                 data = await response.json()
-                                if not data or not isinstance(data, list): break
-                                
-                                page_new_posts = [post for post in data if int(post['id']) > latest_id]
-                                newly_fetched_posts.extend(page_new_posts)
-                                
-                                if len(page_new_posts) < len(data): # We found an overlap
+                                if not data or not isinstance(data, list):
                                     break
-                            else: break
+
+                                page_new_posts = [
+                                    post for post in data if int(post["id"]) > latest_id
+                                ]
+                                newly_fetched_posts.extend(page_new_posts)
+
+                                if len(page_new_posts) < len(
+                                    data
+                                ):  # We found an overlap
+                                    break
+                            else:
+                                break
                     except Exception as e:
-                        log.error(f"Error during incremental fetch for {self.cog_name}: {e}")
+                        log.error(
+                            f"Error during incremental fetch for {self.cog_name}: {e}"
+                        )
                         break
-                
+
                 if newly_fetched_posts:
-                    log.info(f"Found {len(newly_fetched_posts)} new posts for key '{matched_cache_key}'.")
+                    log.info(
+                        f"Found {len(newly_fetched_posts)} new posts for key '{matched_cache_key}'."
+                    )
                     # Combine, remove duplicates, and update source_data
-                    existing_ids = {p['id'] for p in source_data}
-                    unique_new_posts = [p for p in newly_fetched_posts if p['id'] not in existing_ids]
+                    existing_ids = {p["id"] for p in source_data}
+                    unique_new_posts = [
+                        p for p in newly_fetched_posts if p["id"] not in existing_ids
+                    ]
                     source_data = unique_new_posts + source_data
                     await self.cache_manager.set(matched_cache_key, source_data)
             else:
-                log.info(f"Fresh cache hit for '{tags}' using key '{matched_cache_key}'.")
+                log.info(
+                    f"Fresh cache hit for '{tags}' using key '{matched_cache_key}'."
+                )
 
-        else: # Cache Miss
-            log.info(f"Cache miss for '{tags}' (key: '{api_tags_str}'). Performing full fetch.")
+        else:  # Cache Miss
+            log.info(
+                f"Cache miss for '{tags}' (key: '{api_tags_str}'). Performing full fetch."
+            )
             all_fetched_results = []
-            for page in range(10): # Fetch up to 10000 results
-                api_params = {"page": "dapi", "s": "post", "q": "index", "limit": 1000, "pid": page, "tags": api_tags_str, "json": 1}
+            for page in range(10):  # Fetch up to 10000 results
+                api_params = {
+                    "page": "dapi",
+                    "s": "post",
+                    "q": "index",
+                    "limit": 1000,
+                    "pid": page,
+                    "tags": api_tags_str,
+                    "json": 1,
+                }
                 try:
-                    async with self.session.get(self.api_base_url, params=api_params) as response:
+                    async with self.session.get(
+                        self.api_base_url, params=api_params
+                    ) as response:
                         if response.status == 200:
                             data = await response.json()
                             if data and isinstance(data, list):
                                 all_fetched_results.extend(data)
-                                if len(data) < 1000: break
-                            else: break
+                                if len(data) < 1000:
+                                    break
+                            else:
+                                break
                         else:
-                            if page == 0: return f"Failed to fetch data from {self.cog_name}. HTTP Status: {response.status}"
+                            if page == 0:
+                                return f"Failed to fetch data from {self.cog_name}. HTTP Status: {response.status}"
                             break
                 except Exception as e:
                     log.error(f"Error during full fetch for {self.cog_name}: {e}")
-                    if page == 0: return f"Network error fetching data from {self.cog_name}: {e}"
+                    if page == 0:
+                        return f"Network error fetching data from {self.cog_name}: {e}"
                     break
-            
+
             source_data = all_fetched_results
             if source_data:
                 await self.cache_manager.set(api_tags_str, source_data)
 
         # --- 5. Final Filtering and Response ---
-        final_results = self._filter_results(source_data, original_positive_tags, original_negative_tags)
+        final_results = self._filter_results(
+            source_data, original_positive_tags, original_negative_tags
+        )
 
         if not final_results:
             return f"No results found from {self.cog_name} for the tags: `{tags}`."
-        
+
         # This part is for internal calls that expect a list
         if pid_override is not None or limit_override is not None:
             return final_results
 
         random_result = random.choice(final_results)
         post_url = self.post_url_template.format(random_result["id"])
-        return (f"<{post_url}>\n{random_result['file_url']}", final_results)
-
+        return (
+            f"<{post_url}>\n{random_result['file_url']}",
+            final_results,
+            tags_to_process,
+        )
 
     class GelbooruButtons(ui.LayoutView):
         container = ui.Container()
@@ -339,6 +403,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             cog: "GelbooruWatcherBaseCog",
             tags: str,
             all_results: list,
+            original_interaction: discord.Interaction,
             hidden: bool = False,
         ):
             super().__init__(timeout=3600)
@@ -346,10 +411,33 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             self.tags = tags
             self.all_results = all_results
             self.hidden = hidden
+            self.original_interaction_user_id = original_interaction.user.id
             self.current_index = 0
+
+            # Conditionally add pin button
+            if isinstance(original_interaction.channel, discord.DMChannel):
+                self.buttons.add_item(self.pin_message)
 
             if self.all_results:
                 self._update_container(random.choice(self.all_results))
+
+        async def interaction_check(self, interaction: discord.Interaction) -> bool:
+            config = await self.cog.user_config_manager.get_config(
+                self.original_interaction_user_id
+            )
+            allow_others = config.get(
+                "allow_others_to_use_buttons", True
+            )  # Default to True if not set
+            if (
+                not allow_others
+                and interaction.user.id != self.original_interaction_user_id
+            ):
+                await interaction.response.send_message(
+                    "You are not allowed to use the buttons on this message.",
+                    ephemeral=True,
+                )
+                return False
+            return True
 
         def _update_container(self, result: dict):
             self.container.clear_items()
@@ -378,7 +466,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         ):
             random_result = random.choice(self.all_results)
             new_view = self.cog.GelbooruButtons(
-                self.cog, self.tags, self.all_results, self.hidden
+                self.cog, self.tags, self.all_results, interaction, self.hidden
             )
             new_view._update_container(random_result)
             await interaction.response.send_message(
@@ -396,7 +484,12 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                 return
             self.current_index = 0
             view = self.cog.BrowseView(
-                self.cog, self.tags, self.all_results, self.hidden, self.current_index
+                self.cog,
+                self.tags,
+                self.all_results,
+                interaction,
+                self.hidden,
+                self.current_index,
             )
             await interaction.response.edit_message(content="", view=view)
 
@@ -429,6 +522,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             cog: "GelbooruWatcherBaseCog",
             tags: str,
             all_results: list,
+            original_interaction: discord.Interaction,
             hidden: bool = False,
             current_index: int = 0,
         ):
@@ -437,10 +531,27 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             self.tags = tags
             self.all_results = all_results
             self.hidden = hidden
+            self.original_interaction_user_id = original_interaction.user.id
             self.current_index = current_index
 
             if self.all_results:
                 self._refresh_container()
+
+        async def interaction_check(self, interaction: discord.Interaction) -> bool:
+            config = await self.cog.user_config_manager.get_config(
+                self.original_interaction_user_id
+            )
+            allow_others = config.get("allow_others_to_use_buttons", True)
+            if (
+                not allow_others
+                and interaction.user.id != self.original_interaction_user_id
+            ):
+                await interaction.response.send_message(
+                    "You are not allowed to use the buttons on this message.",
+                    ephemeral=True,
+                )
+                return False
+            return True
 
         def _refresh_container(self):
             self.container.clear_items()
@@ -516,7 +627,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                 return
             random_result = random.choice(self.all_results)
             view = self.cog.GelbooruButtons(
-                self.cog, self.tags, self.all_results, self.hidden
+                self.cog, self.tags, self.all_results, interaction, self.hidden
             )
             view._update_container(random_result)
             await interaction.response.edit_message(content="", view=view)
@@ -550,16 +661,20 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                     "Please enter a valid number", ephemeral=True
                 )
 
-
-
     async def _slash_command_logic(
-        self, interaction: discord.Interaction, tags: str, hidden: bool
+        self, interaction: discord.Interaction, tags: str, hidden: typing.Optional[bool]
     ):
+        user_config = await self.user_config_manager.get_config(interaction.user.id)
+        if hidden is None:
+            hidden = user_config.get("default_ephemeral", False)
+
         response = await self._fetch_posts_logic(interaction, tags, hidden=hidden)
 
         if isinstance(response, tuple):
-            _, all_results = response
-            view = self.GelbooruButtons(self, tags, all_results, hidden)
+            _, all_results, processed_tags = response
+            view = self.GelbooruButtons(
+                self, processed_tags, all_results, interaction, hidden
+            )
             if interaction.response.is_done():
                 await interaction.followup.send(content="", view=view, ephemeral=hidden)
             else:
@@ -588,12 +703,16 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                     )
 
     async def _browse_slash_command_logic(
-        self, interaction: discord.Interaction, tags: str, hidden: bool
+        self, interaction: discord.Interaction, tags: str, hidden: typing.Optional[bool]
     ):
+        user_config = await self.user_config_manager.get_config(interaction.user.id)
+        if hidden is None:
+            hidden = user_config.get("default_ephemeral", False)
+
         response = await self._fetch_posts_logic(interaction, tags, hidden=hidden)
 
         if isinstance(response, tuple):
-            _, all_results = response
+            _, all_results, processed_tags = response
             if not all_results:
                 content = f"No results found from {self.cog_name} for the given tags."
                 if not interaction.response.is_done():
@@ -602,7 +721,9 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                     await interaction.followup.send(content, ephemeral=hidden)
                 return
 
-            view = self.BrowseView(self, tags, all_results, hidden, current_index=0)
+            view = self.BrowseView(
+                self, processed_tags, all_results, interaction, hidden, current_index=0
+            )
             if interaction.response.is_done():
                 await interaction.followup.send(content="", view=view, ephemeral=hidden)
             else:

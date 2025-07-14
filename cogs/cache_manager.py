@@ -7,8 +7,11 @@ from typing import Optional, List, Any, Dict, Tuple
 
 log = logging.getLogger(__name__)
 
+
 class CacheManager:
-    def __init__(self, db_path: str, cache_ttl: int = 86400, cache_max_lifetime: int = 2592000):
+    def __init__(
+        self, db_path: str, cache_ttl: int = 86400, cache_max_lifetime: int = 2592000
+    ):
         """
         Initializes the CacheManager.
 
@@ -33,13 +36,15 @@ class CacheManager:
                 return
             try:
                 async with aiosqlite.connect(self.db_path) as conn:
-                    await conn.execute("""
+                    await conn.execute(
+                        """
                         CREATE TABLE IF NOT EXISTS cache (
                             tags TEXT PRIMARY KEY,
                             timestamp INTEGER,
                             results TEXT
                         )
-                    """)
+                    """
+                    )
                     await conn.commit()
                 self.db_initialized = True
                 log.info("Database initialized successfully.")
@@ -49,7 +54,9 @@ class CacheManager:
     @staticmethod
     def _parse_tags_for_lookup(tags_str: str) -> set:
         """Parses a tag string into a set of tags, ignoring exclusions for this purpose."""
-        return {tag for tag in tags_str.strip().lower().split() if not tag.startswith('-')}
+        return {
+            tag for tag in tags_str.strip().lower().split() if not tag.startswith("-")
+        }
 
     async def get(self, tags: str) -> Optional[Tuple[List[Dict[str, Any]], bool, str]]:
         """
@@ -67,19 +74,21 @@ class CacheManager:
         """
         await self.init_db()  # Ensure DB is initialized
         requested_tags_set = self._parse_tags_for_lookup(tags)
-        
+
         best_candidate = None
         best_candidate_tags_len = -1
 
         async with self._lock:
             try:
                 async with aiosqlite.connect(self.db_path) as conn:
-                    async with conn.execute("SELECT tags, timestamp, results FROM cache") as cursor:
+                    async with conn.execute(
+                        "SELECT tags, timestamp, results FROM cache"
+                    ) as cursor:
                         all_rows = await cursor.fetchall()
 
                 for row_tags_str, timestamp, results_json in all_rows:
                     candidate_tags_set = self._parse_tags_for_lookup(row_tags_str)
-                    
+
                     if candidate_tags_set.issubset(requested_tags_set):
                         if len(candidate_tags_set) > best_candidate_tags_len:
                             best_candidate = (row_tags_str, timestamp, results_json)
@@ -88,7 +97,9 @@ class CacheManager:
                 if best_candidate:
                     cached_tags_str, timestamp, results_json = best_candidate
                     is_stale = time.time() - timestamp >= self.cache_ttl
-                    log.info(f"Cache hit for tags '{tags}' using candidate '{cached_tags_str}'. Stale: {is_stale}")
+                    log.info(
+                        f"Cache hit for tags '{tags}' using candidate '{cached_tags_str}'. Stale: {is_stale}"
+                    )
                     return json.loads(results_json), is_stale, cached_tags_str
 
             except aiosqlite.Error as e:
@@ -113,7 +124,7 @@ class CacheManager:
                 async with aiosqlite.connect(self.db_path) as conn:
                     await conn.execute(
                         "INSERT OR REPLACE INTO cache (tags, timestamp, results) VALUES (?, ?, ?)",
-                        (tags, timestamp, results_json)
+                        (tags, timestamp, results_json),
                     )
                     await conn.commit()
                 log.info(f"Cache set for tags: {tags}")
@@ -127,11 +138,15 @@ class CacheManager:
             try:
                 async with aiosqlite.connect(self.db_path) as conn:
                     expiration_time = int(time.time()) - self.cache_max_lifetime
-                    await conn.execute("DELETE FROM cache WHERE timestamp < ?", (expiration_time,))
+                    await conn.execute(
+                        "DELETE FROM cache WHERE timestamp < ?", (expiration_time,)
+                    )
                     await conn.commit()
                     changes = conn.total_changes
                     if changes > 0:
-                        log.info(f"Pruned {changes} entries older than {self.cache_max_lifetime / 86400} days from the cache.")
+                        log.info(
+                            f"Pruned {changes} entries older than {self.cache_max_lifetime / 86400} days from the cache."
+                        )
             except aiosqlite.Error as e:
                 log.error(f"Failed to prune expired cache entries: {e}")
 
@@ -141,7 +156,7 @@ class CacheManager:
 
         :param interval: The interval in seconds between pruning runs. Default is 1 hour.
         """
-        await self.init_db() # Ensure DB is initialized before starting loop
+        await self.init_db()  # Ensure DB is initialized before starting loop
         log.info("Starting background cache pruning loop.")
         while True:
             await asyncio.sleep(interval)
