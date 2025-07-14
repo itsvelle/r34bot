@@ -130,7 +130,7 @@ class UtilsCog(commands.Cog):
             "Memory": f"{mem_used_gb:.1f} GB Used / {mem_total_gb:.1f} GB (Swap: {swap_used_b} B Used / {swap_total_b} B)",
         }
 
-        response_str = "Debug\n"
+        response_str = "nya :3\n"
         response_str += "```\n"
         for key, value in debug_info.items():
             response_str += f"{key}: {value}\n"
