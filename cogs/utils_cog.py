@@ -121,7 +121,7 @@ class UtilsCog(commands.Cog):
             "Ping": f"{ping}ms",
             "Integration Type": "User",
             "Context": context_str,
-            "Shard ID": f"{interaction.shard_id if interaction.shard_id is not None else 0}",
+            "Shard ID": f"{interaction.client.shard_id if interaction.client.shard_id is not None else 0}",
             "Guild ID": f"{interaction.guild_id if interaction.guild_id else 'None'}",
             "Channel ID": f"{interaction.channel_id}",
             "Author ID": f"{interaction.user.id}",
