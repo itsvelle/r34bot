@@ -82,7 +82,7 @@ class UtilsCog(commands.Cog):
         embed.add_field(name="Version", value=self.get_git_revision_hash(), inline=True)
         embed.add_field(name="Creator", value="slipstream_.", inline=True)
         embed.add_field(
-            name="Library", value=f"discord.py {discord.__version__}", inline=True
+            name="Library", value=f"discord.py-slipstream-fork {discord.__version__}", inline=True
         )
         embed.add_field(name="Servers", value=str(len(self.bot.guilds)), inline=True)
         embed.add_field(name="Users", value=str(len(self.bot.users)), inline=True)
