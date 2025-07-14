@@ -32,6 +32,9 @@ ENV/
 # Logs
 *.log
 
+# cache
+*cache.json
+
 # dotenv environment files
 .env
 .env.*

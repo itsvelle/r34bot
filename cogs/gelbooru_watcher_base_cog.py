@@ -11,6 +11,7 @@ import typing  # Need this for Optional
 import asyncio
 import logging  # For logging
 import abc  # For Abstract Base Class
+from .cache_manager import CacheManager
 
 # Setup logger for this cog
 log = logging.getLogger(__name__)
@@ -50,10 +51,11 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         self.main_command_name = main_command_name
         self.post_url_template = post_url_template
 
-        self.cache_file = f"{self.cog_name.lower()}_cache.json"
-
-        self.cache_data = self._load_cache()
         self.session: typing.Optional[aiohttp.ClientSession] = None
+        
+        # Initialize CacheManager
+        db_path = f"{self.cog_name.lower()}_cache.db"
+        self.cache_manager = CacheManager(db_path=db_path)
 
         if bot.is_ready():
             asyncio.create_task(self.initialize_cog_async())
@@ -63,6 +65,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
     async def initialize_cog_async(self):
         """Asynchronous part of cog initialization."""
         log.info(f"Initializing {self.cog_name}Cog...")
+        await self.cache_manager.init_db()
         if self.session is None or self.session.closed:
             self.session = aiohttp.ClientSession()
             log.info(f"aiohttp ClientSession created for {self.cog_name}Cog.")
@@ -71,6 +74,8 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         """Waits until bot is ready, then initializes and starts tasks."""
         await self.bot.wait_until_ready()
         await self.initialize_cog_async()
+        # Start the pruning loop as a background task
+        self.bot.loop.create_task(self.cache_manager.start_pruning_loop())
 
     async def cog_load(self):
         log.info(f"{self.cog_name}Cog loaded.")
@@ -85,26 +90,6 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         if self.session and not self.session.closed:
             await self.session.close()
             log.info(f"aiohttp ClientSession closed for {self.cog_name}Cog.")
-
-    def _load_cache(self):
-        if os.path.exists(self.cache_file):
-            try:
-                with open(self.cache_file, "r") as f:
-                    return json.load(f)
-            except Exception as e:
-                log.error(
-                    f"Failed to load {self.cog_name} cache file ({self.cache_file}): {e}"
-                )
-        return {}
-
-    def _save_cache(self):
-        try:
-            with open(self.cache_file, "w") as f:
-                json.dump(self.cache_data, f, indent=4)
-        except Exception as e:
-            log.error(
-                f"Failed to save {self.cog_name} cache file ({self.cache_file}): {e}"
-            )
 
 
     async def _fetch_posts_logic(
@@ -161,14 +146,13 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             pass
         else:
             cache_key = tags.lower().strip()
-            if cache_key in self.cache_data:
-                cached_entry = self.cache_data[cache_key]
-                cache_timestamp = cached_entry.get("timestamp", 0)
-                if time.time() - cache_timestamp < 86400:
-                    all_results = cached_entry.get("results", [])
-                    if all_results:
-                        random_result = random.choice(all_results)
-                        return (f"{random_result['file_url']}", all_results)
+            cached_results = await self.cache_manager.get(cache_key)
+            if cached_results:
+                all_results = cached_results
+                random_result = random.choice(all_results)
+                # Construct the post URL for the response
+                post_url = self.post_url_template.format(random_result["id"])
+                return (f"<{post_url}>\n{random_result['file_url']}", all_results)
 
         if not self.session or self.session.closed:
             self.session = aiohttp.ClientSession()
@@ -308,11 +292,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
 
         if all_results:
             cache_key = tags.lower().strip()
-            self.cache_data[cache_key] = {
-                "timestamp": int(time.time()),
-                "results": all_results,
-            }
-            self._save_cache()
+            await self.cache_manager.set(cache_key, all_results)
 
         if not all_results:
             return f"No results found from {self.cog_name} for the given tags."

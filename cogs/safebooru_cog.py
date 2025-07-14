@@ -36,8 +36,8 @@ class SafebooruCog(GelbooruWatcherBaseCog):
     async def safebooru_slash(
         self,
         interaction: discord.Interaction,
-        tags: typing.Optional[str] = None,
-        hidden: bool = False,
+        tags: str,
+        hidden: typing.Optional[bool]
     ):
         """Slash command version of safebooru."""
         actual_tags = tags or self.default_tags
@@ -56,8 +56,8 @@ class SafebooruCog(GelbooruWatcherBaseCog):
     async def safebooru_browse_slash(
         self,
         interaction: discord.Interaction,
-        tags: typing.Optional[str] = None,
-        hidden: bool = False,
+        tags: str,
+        hidden: typing.Optional[bool],
     ):
         """Browse Safebooru results with navigation buttons."""
         actual_tags = tags or self.default_tags

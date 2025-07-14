@@ -33,7 +33,7 @@ class Rule34Cog(GelbooruWatcherBaseCog):
         hidden="Set to True to make the response visible only to you (default: False)",
     )
     async def rule34_slash(
-        self, interaction: discord.Interaction, tags: str, hidden: bool = False
+        self, interaction: discord.Interaction, tags: str, hidden: typing.Optional[bool]
     ):
         """Slash command version of rule34."""
         # The _slash_command_logic method from the base cog will handle deferring the interaction.
@@ -49,7 +49,7 @@ class Rule34Cog(GelbooruWatcherBaseCog):
         hidden="Set to True to make the response visible only to you (default: False)",
     )
     async def rule34_browse_slash(
-        self, interaction: discord.Interaction, tags: str, hidden: bool = False
+        self, interaction: discord.Interaction, tags: str, hidden: typing.Optional[bool]
     ):
         """Browse Rule34 results with navigation buttons."""
         # The _browse_slash_command_logic method from the base cog will handle deferring the interaction.
