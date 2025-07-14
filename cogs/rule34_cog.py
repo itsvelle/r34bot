@@ -26,7 +26,7 @@ class Rule34Cog(GelbooruWatcherBaseCog):
     # --- Slash Command ---
     @app_commands.allowed_contexts(dms=True, guilds=True, private_channels=True)
     @app_commands.command(
-        name="rule34", description="Get random image from Rule34 with specified tags"
+        name="rule34", description="Get random image from Rule34 with specified tags", nsfw=True
     )
     @app_commands.describe(
         tags="The tags to search for (e.g., 'hatsune_miku rating:safe')",
@@ -42,7 +42,7 @@ class Rule34Cog(GelbooruWatcherBaseCog):
     # --- New Browse Command ---
     @app_commands.allowed_contexts(dms=True, guilds=True, private_channels=True)
     @app_commands.command(
-        name="rule34browse", description="Browse Rule34 results with navigation buttons"
+        name="rule34browse", description="Browse Rule34 results with navigation buttons", nsfw=True
     )
     @app_commands.describe(
         tags="The tags to search for (e.g., 'hatsune_miku rating:safe')",
