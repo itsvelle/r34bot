@@ -414,12 +414,18 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             self.original_interaction_user_id = original_interaction.user.id
             self.current_index = 0
 
-            # Conditionally add pin button
-            if isinstance(original_interaction.channel, discord.DMChannel):
-                self.buttons.add_item(self.pin_message)
-
             if self.all_results:
                 self._update_container(random.choice(self.all_results))
+
+            # Conditionally add pin button
+            if isinstance(original_interaction.channel, discord.DMChannel):
+                pin_button = discord.ui.Button(
+                    label="Pin",
+                    style=discord.ButtonStyle.danger,
+                    custom_id=f"{self.cog.cog_name}_pin_message_button",
+                )
+                pin_button.callback = self.pin_message
+                self.buttons.add_item(pin_button)
 
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
             config = await self.cog.user_config_manager.get_config(
@@ -493,7 +499,6 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             )
             await interaction.response.edit_message(content="", view=view)
 
-        @buttons.button(label="Pin", style=discord.ButtonStyle.danger)
         async def pin_message(
             self, interaction: discord.Interaction, button: discord.ui.Button
         ):
