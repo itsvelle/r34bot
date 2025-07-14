@@ -11,6 +11,7 @@ class SettingsCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.user_config_manager = bot.user_config_manager
+
     @app_commands.allowed_contexts(dms=True, guilds=True, private_channels=True)
     @app_commands.command(
         name="config", description="Configure your personal settings for the bot."
