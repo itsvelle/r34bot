@@ -107,7 +107,7 @@ class UtilsCog(commands.Cog):
 
         # Get memory usage
         mem_info = self.process.memory_info()
-        mem_used_gb = mem_info.rss / (1024**3)
+        mem_used_gb = psutil.virtual_memory().used / (1024**3)
         mem_total_gb = psutil.virtual_memory().total / (1024**3)
 
         swap = psutil.swap_memory()
