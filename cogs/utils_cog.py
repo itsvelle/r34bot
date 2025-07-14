@@ -80,7 +80,7 @@ class UtilsCog(commands.Cog):
         creator = app_info.owner
 
         embed.add_field(name="Version", value=self.get_git_revision_hash(), inline=True)
-        embed.add_field(name="Creator", value=str(creator), inline=True)
+        embed.add_field(name="Creator", value="slipstream_.", inline=True)
         embed.add_field(
             name="Library", value=f"discord.py {discord.__version__}", inline=True
         )
