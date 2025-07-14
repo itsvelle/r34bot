@@ -47,8 +47,8 @@ class UserConfigManager:
                         row = await cursor.fetchone()
                 if row:
                     return {
-                        "default_ephemeral": row[0],
-                        "allow_others_to_use_buttons": row[1],
+                        "default_ephemeral": bool(row[0]),
+                        "allow_others_to_use_buttons": bool(row[1]),
                     }
             except aiosqlite.Error as e:
                 log.error(f"Failed to get user config for user '{user_id}': {e}")
