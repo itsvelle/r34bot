@@ -34,6 +34,7 @@ ENV/
 
 # cache
 *cache.json
+*.db
 
 # dotenv environment files
 .env

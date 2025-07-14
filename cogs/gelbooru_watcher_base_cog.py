@@ -57,33 +57,22 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         db_path = f"{self.cog_name.lower()}_cache.db"
         self.cache_manager = CacheManager(db_path=db_path)
 
-        if bot.is_ready():
-            asyncio.create_task(self.initialize_cog_async())
-        else:
-            asyncio.create_task(self.start_task_when_ready())
+    async def cog_load(self):
+        """Handles asynchronous setup when the cog is loaded."""
+        log.info(f"Loading {self.cog_name}Cog...")
 
-    async def initialize_cog_async(self):
-        """Asynchronous part of cog initialization."""
-        log.info(f"Initializing {self.cog_name}Cog...")
+        # Initialize the database.
         await self.cache_manager.init_db()
+
+        # Create the aiohttp session.
         if self.session is None or self.session.closed:
             self.session = aiohttp.ClientSession()
             log.info(f"aiohttp ClientSession created for {self.cog_name}Cog.")
 
-    async def start_task_when_ready(self):
-        """Waits until bot is ready, then initializes and starts tasks."""
-        await self.bot.wait_until_ready()
-        await self.initialize_cog_async()
-        # Start the pruning loop as a background task
+        # Start the cache pruning loop as a background task.
         self.bot.loop.create_task(self.cache_manager.start_pruning_loop())
-
-    async def cog_load(self):
-        log.info(f"{self.cog_name}Cog loaded.")
-        if self.session is None or self.session.closed:
-            self.session = aiohttp.ClientSession()
-            log.info(
-                f"aiohttp ClientSession (re)created during cog_load for {self.cog_name}Cog."
-            )
+        
+        log.info(f"{self.cog_name}Cog loaded and tasks started.")
 
     async def cog_unload(self):
         """Clean up resources when the cog is unloaded."""
@@ -312,7 +301,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             all_results: list,
             hidden: bool = False,
         ):
-            super().__init__(timeout=300)
+            super().__init__(timeout=3600)
             self.cog = cog
             self.tags = tags
             self.all_results = all_results
@@ -403,7 +392,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             hidden: bool = False,
             current_index: int = 0,
         ):
-            super().__init__(timeout=300)
+            super().__init__(timeout=3600)
             self.cog = cog
             self.tags = tags
             self.all_results = all_results
