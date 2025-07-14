@@ -35,14 +35,6 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         post_url_template: str,
     ):
         self.bot = bot
-        # Ensure super().__init__() is called for Cog's metaclass features, especially if 'name' was passed to Cog.
-        # However, 'name' is handled by the derived classes (Rule34Cog, SafebooruCog)
-        # For the base class, we don't pass 'name' to commands.Cog constructor directly.
-        # The `name` parameter in `Rule34Cog(..., name="Rule34")` is handled by CogMeta.
-        # The base class itself doesn't need a Cog 'name' in the same way.
-        # commands.Cog.__init__(self, bot) # This might be needed if Cog's __init__ does setup
-        # Let's rely on the derived class's super() call to handle Cog's __init__ properly.
-
         self.cog_name = cog_name
         self.api_base_url = api_base_url
         self.default_tags = default_tags
@@ -56,6 +48,115 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         # Initialize CacheManager
         db_path = f"{self.cog_name.lower()}_cache.db"
         self.cache_manager = CacheManager(db_path=db_path)
+
+        # Hardcoded tag aliases
+        self.tag_aliases = {
+            # Vocaloid
+            "hatsune_miku": "vocaloid",
+            "kagamine_rin": "vocaloid",
+            "kagamine_len": "vocaloid",
+            "megurine_luka": "vocaloid",
+            "meiko_(vocaloid)": "vocaloid",
+            "kaiko_(vocaloid)": "vocaloid",
+            "kaito_(vocaloid)": "vocaloid",
+            "gumi_(vocaloid)": "vocaloid",
+            "gakupo_kamui": "vocaloid",
+            "gakupo_(vocaloid)": "vocaloid",
+            "ia_(vocaloid)": "vocaloid",
+            "lily_(vocaloid)": "vocaloid",
+            "seeu_(vocaloid)": "vocaloid",
+            "yuzuki_yukari": "vocaloid",
+            "vflower": "vocaloid",
+            "v4_flower": "vocaloid",
+            "miki_(vocaloid)": "vocaloid",
+            "sf-a2_miki": "vocaloid",
+            "kokone_(vocaloid)": "vocaloid",
+            "mayu_(vocaloid)": "vocaloid",
+            "zola_project": "vocaloid",
+            "tone_rion": "vocaloid",
+            "galaco": "vocaloid",
+            "anon_(vocaloid)": "vocaloid",
+            "kanon_(vocaloid)": "vocaloid",
+            "fukase_(vocaloid)": "vocaloid",
+            "cyber_diva": "vocaloid",
+            "cyber_songman": "vocaloid",
+            "una_(vocaloid)": "vocaloid",
+            "otomachi_una": "vocaloid",
+            "kokone": "vocaloid",
+            "mew_(vocaloid)": "vocaloid",
+            "v_yuma": "vocaloid",
+            "v_yuuma": "vocaloid",
+            "v_yuuma_(vocaloid)": "vocaloid",
+            "v_yuma_(vocaloid)": "vocaloid",
+            "dex_(vocaloid)": "vocaloid",
+            "daina_(vocaloid)": "vocaloid",
+
+            # UTAU
+            "kasane_teto": "utau",
+            "defoko": "utau",
+            "utane_uta": "utau",
+            "momone_momo": "utau",
+            "yamine_renri": "utau",
+            "matsudappoiyo": "utau",
+            "namine_ritsu": "utau",
+            "makune_hachi": "utau",
+            "yufu_sekka": "utau",
+            "sukone_tei": "utau",
+            "momone_momo_(utau)": "utau",
+            "yamine_renri_(utau)": "utau",
+            "momo_momone": "utau",
+            "kikyuune_aisen": "utau",
+            "kikyuune_aisen_(utau)": "utau",
+            "yukari_yuzuki_(utau)": "utau",
+            "kikyuune_aisen": "utau",
+            "sukone_tei_(utau)": "utau",
+            "makune_hachi_(utau)": "utau",
+            "namine_ritsu_(utau)": "utau",
+            "sekka_yufu": "utau",
+            "sekka_yufu_(utau)": "utau",
+
+            # Zenless Zone Zero
+            "anby_demara": "zenless_zone_zero",
+            "anton_ivanov": "zenless_zone_zero",
+            "asaba_harumasa": "zenless_zone_zero",
+            "astra_yao": "zenless_zone_zero",
+            "belle_(zenless_zone_zero)": "zenless_zone_zero",
+            "ben_bigger": "zenless_zone_zero",
+            "billy_kid": "zenless_zone_zero",
+            "burnice_white": "zenless_zone_zero",
+            "caesar_king": "zenless_zone_zero",
+            "corin_wickes": "zenless_zone_zero",
+            "ellen_joe": "zenless_zone_zero",
+            "evelyn_chevalier": "zenless_zone_zero",
+            "grace_howard": "zenless_zone_zero",
+            "hoshimi_miyabi": "zenless_zone_zero",
+            "hugo_vlad": "zenless_zone_zero",
+            "jane_doe_(zenless_zone_zero)": "zenless_zone_zero",
+            "ju_fufu": "zenless_zone_zero",
+            "koleda_belobog": "zenless_zone_zero",
+            "lighter_(zenless_zone_zero)": "zenless_zone_zero",
+            "luciana_de_montefio": "zenless_zone_zero",
+            "lucy_(zenless_zone_zero)": "zenless_zone_zero",
+            "nekomiya_mana": "zenless_zone_zero",
+            "nicole_demara": "zenless_zone_zero",
+            "pan_yinhu": "zenless_zone_zero",
+            "piper_wheel": "zenless_zone_zero",
+            "pulchra_fellini": "zenless_zone_zero",
+            "qingyi_(zenless_zone_zero)": "zenless_zone_zero",
+            "rina_(zenless_zone_zero)": "zenless_zone_zero",
+            "seth_lowell": "zenless_zone_zero",
+            "soldier_11_(zenless_zone_zero)": "zenless_zone_zero",
+            "soukaku": "zenless_zone_zero",
+            "soukaku_(zenless_zone_zero)": "zenless_zone_zero",
+            "trigger_(zenless_zone_zero)": "zenless_zone_zero",
+            "tsukishiro_yanagi": "zenless_zone_zero",
+            "vivian_(zenless_zone_zero)": "zenless_zone_zero",
+            "vivian_banshee": "zenless_zone_zero",
+            "von_lycaon": "zenless_zone_zero",
+            "wise_(zenless_zone_zero)": "zenless_zone_zero",
+            "yixuan_(zenless_zone_zero)": "zenless_zone_zero",
+            "zhu_yuan": "zenless_zone_zero",
+        }
 
     async def cog_load(self):
         """Handles asynchronous setup when the cog is loaded."""
@@ -80,6 +181,29 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             await self.session.close()
             log.info(f"aiohttp ClientSession closed for {self.cog_name}Cog.")
 
+    @staticmethod
+    def _parse_tags(tags_str: str) -> typing.Tuple[set, set]:
+        """Parses a tag string into positive and negative tag sets."""
+        positive_tags = set()
+        negative_tags = set()
+        for tag in tags_str.strip().lower().split():
+            if tag.startswith('-'):
+                negative_tags.add(tag[1:])
+            elif tag:
+                positive_tags.add(tag)
+        return positive_tags, negative_tags
+
+    def _filter_results(self, results: list, required_tags: set, excluded_tags: set) -> list:
+        """Filters a list of posts based on required and excluded tags."""
+        if not required_tags and not excluded_tags:
+            return results
+
+        filtered_results = []
+        for post in results:
+            post_tags = set(post.get("tags", "").split())
+            if required_tags.issubset(post_tags) and not excluded_tags.intersection(post_tags):
+                filtered_results.append(post)
+        return filtered_results
 
     async def _fetch_posts_logic(
         self,
@@ -89,206 +213,122 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         limit_override: typing.Optional[int] = None,
         hidden: bool = False,
     ) -> typing.Union[str, tuple[str, list], list]:
-        all_results = []
-        current_pid = pid_override if pid_override is not None else 0
-        # API has a hard limit of 1000 results per request, so we'll use that as our per-page limit
-        per_page_limit = 1000
-        # If limit_override is provided, use it, otherwise default to 3000 (3 pages of results)
-        total_limit = limit_override if limit_override is not None else 100000
-
-        # For internal calls with specific pid/limit, use those exact values
-        if pid_override is not None or limit_override is not None:
-            use_pagination = False
-            api_limit = limit_override if limit_override is not None else per_page_limit
-        else:
-            use_pagination = True
-            api_limit = per_page_limit
-
+        
+        # --- 1. Initial Setup & Defer ---
         if not isinstance(interaction_or_ctx, str) and interaction_or_ctx:
             if self.is_nsfw_site:
-                is_nsfw_channel = False
                 channel = interaction_or_ctx.channel
-                if isinstance(channel, discord.TextChannel) and channel.is_nsfw():
-                    is_nsfw_channel = True
-                elif isinstance(channel, discord.DMChannel):
-                    is_nsfw_channel = True
-
-                # For Gelbooru-like APIs, 'rating:safe', 'rating:general', 'rating:questionable' might be SFW-ish
-                # We'll stick to 'rating:safe' for simplicity as it was in Rule34Cog
+                is_nsfw_channel = (isinstance(channel, discord.TextChannel) and channel.is_nsfw()) or \
+                                  isinstance(channel, discord.DMChannel)
                 allow_in_non_nsfw = "rating:safe" in tags.lower()
-
                 if not is_nsfw_channel and not allow_in_non_nsfw:
                     return f"This command for {self.cog_name} can only be used in age-restricted (NSFW) channels, DMs, or with the `rating:safe` tag."
 
             is_interaction = not isinstance(interaction_or_ctx, commands.Context)
-            if is_interaction:
-                if not interaction_or_ctx.response.is_done():
-                    await interaction_or_ctx.response.defer(ephemeral=hidden)
-            elif hasattr(interaction_or_ctx, "reply"):  # Prefix command
-                await interaction_or_ctx.reply(
-                    f"Fetching data from {self.cog_name}, please wait..."
-                )
-
-        # Check cache first if not using specific pagination
-        if not use_pagination:
-            # Skip cache for internal calls with specific pid/limit
-            pass
-        else:
-            cache_key = tags.lower().strip()
-            cached_results = await self.cache_manager.get(cache_key)
-            if cached_results:
-                all_results = cached_results
-                random_result = random.choice(all_results)
-                # Construct the post URL for the response
-                post_url = self.post_url_template.format(random_result["id"])
-                return (f"<{post_url}>\n{random_result['file_url']}", all_results)
+            if is_interaction and not interaction_or_ctx.response.is_done():
+                await interaction_or_ctx.response.defer(ephemeral=hidden)
+            elif hasattr(interaction_or_ctx, "reply"):
+                await interaction_or_ctx.reply(f"Fetching data from {self.cog_name}, please wait...")
 
         if not self.session or self.session.closed:
             self.session = aiohttp.ClientSession()
-            log.info(
-                f"Recreated aiohttp.ClientSession in _fetch_posts_logic for {self.cog_name}"
-            )
+            log.info(f"Recreated aiohttp.ClientSession in _fetch_posts_logic for {self.cog_name}")
 
-        all_results = []
+        # --- 2. Tag Parsing and Aliasing ---
+        original_positive_tags, original_negative_tags = self._parse_tags(tags)
+        
+        api_tags_set = original_positive_tags.copy()
+        for tag in list(api_tags_set):
+            if tag in self.tag_aliases:
+                api_tags_set.remove(tag)
+                api_tags_set.add(self.tag_aliases[tag])
+        
+        # Sort for consistent cache keys
+        api_tags_str = " ".join(sorted(list(api_tags_set)))
 
-        # If using pagination, we'll make multiple requests
-        if use_pagination:
-            max_pages = (total_limit + per_page_limit - 1) // per_page_limit
-            for page in range(max_pages):
-                # Stop if we've reached our total limit or if we got fewer results than the per-page limit
-                if len(all_results) >= total_limit or (
-                    page > 0 and len(all_results) % per_page_limit != 0
-                ):
-                    break
+        # --- 3. Cache Check ---
+        cache_response = await self.cache_manager.get(api_tags_str)
+        
+        source_data = []
+        matched_cache_key = api_tags_str
 
-                api_params = {
-                    "page": "dapi",
-                    "s": "post",
-                    "q": "index",
-                    "limit": per_page_limit,
-                    "pid": page,
-                    "tags": tags,
-                    "json": 1,
-                }
-
-                try:
-                    async with self.session.get(
-                        self.api_base_url, params=api_params
-                    ) as response:
-                        if response.status == 200:
-                            try:
+        # --- 4. Fetching Data (Cache, Incremental, or Full) ---
+        if cache_response:
+            cached_results, is_stale, matched_cache_key = cache_response
+            source_data = cached_results
+            
+            if is_stale:
+                log.info(f"Stale cache hit for '{tags}' using key '{matched_cache_key}'. Performing incremental fetch.")
+                latest_id = max(int(p['id']) for p in cached_results) if cached_results else 0
+                
+                newly_fetched_posts = []
+                for page in range(10): # Fetch up to 10 pages of new content
+                    api_params = {"page": "dapi", "s": "post", "q": "index", "limit": 1000, "pid": page, "tags": matched_cache_key, "json": 1}
+                    try:
+                        async with self.session.get(self.api_base_url, params=api_params) as response:
+                            if response.status == 200:
                                 data = await response.json()
-                            except aiohttp.ContentTypeError:
-                                log.warning(
-                                    f"{self.cog_name} API returned non-JSON for tags: {tags}, pid: {page}, params: {api_params}"
-                                )
-                                data = None
-
-                            if data and isinstance(data, list):
-                                # If we got fewer results than requested, we've reached the end
-                                all_results.extend(data)
-                                if len(data) < per_page_limit:
+                                if not data or not isinstance(data, list): break
+                                
+                                page_new_posts = [post for post in data if int(post['id']) > latest_id]
+                                newly_fetched_posts.extend(page_new_posts)
+                                
+                                if len(page_new_posts) < len(data): # We found an overlap
                                     break
-                            elif isinstance(data, list) and len(data) == 0:
-                                # Empty page, no more results
-                                break
-                            else:
-                                log.warning(
-                                    f"Unexpected API response format from {self.cog_name} (not list or empty list): {data} for tags: {tags}, pid: {page}, params: {api_params}"
-                                )
-                                break
-                        else:
-                            log.error(
-                                f"Failed to fetch {self.cog_name} data. HTTP Status: {response.status} for tags: {tags}, pid: {page}, params: {api_params}"
-                            )
-                            if page == 0:  # Only return error if first page fails
-                                return f"Failed to fetch data from {self.cog_name}. HTTP Status: {response.status}"
-                            break
-                except aiohttp.ClientError as e:
-                    log.error(
-                        f"aiohttp.ClientError in _fetch_posts_logic for {self.cog_name} tags {tags}: {e}"
-                    )
-                    if page == 0:  # Only return error if first page fails
-                        return f"Network error fetching data from {self.cog_name}: {e}"
-                    break
-                except Exception as e:
-                    log.exception(
-                        f"Unexpected error in _fetch_posts_logic API call for {self.cog_name} tags {tags}: {e}"
-                    )
-                    if page == 0:  # Only return error if first page fails
-                        return f"An unexpected error occurred during {self.cog_name} API call: {e}"
-                    break
+                            else: break
+                    except Exception as e:
+                        log.error(f"Error during incremental fetch for {self.cog_name}: {e}")
+                        break
+                
+                if newly_fetched_posts:
+                    log.info(f"Found {len(newly_fetched_posts)} new posts for key '{matched_cache_key}'.")
+                    # Combine, remove duplicates, and update source_data
+                    existing_ids = {p['id'] for p in source_data}
+                    unique_new_posts = [p for p in newly_fetched_posts if p['id'] not in existing_ids]
+                    source_data = unique_new_posts + source_data
+                    await self.cache_manager.set(matched_cache_key, source_data)
+            else:
+                log.info(f"Fresh cache hit for '{tags}' using key '{matched_cache_key}'.")
 
-                # Limit to the total we want
-                if len(all_results) > total_limit:
-                    all_results = all_results[:total_limit]
-                    break
-        else:
-            # Single request with specific pid/limit
-            api_params = {
-                "page": "dapi",
-                "s": "post",
-                "q": "index",
-                "limit": api_limit,
-                "pid": current_pid,
-                "tags": tags,
-                "json": 1,
-            }
-
-            try:
-                async with self.session.get(
-                    self.api_base_url, params=api_params
-                ) as response:
-                    if response.status == 200:
-                        try:
+        else: # Cache Miss
+            log.info(f"Cache miss for '{tags}' (key: '{api_tags_str}'). Performing full fetch.")
+            all_fetched_results = []
+            for page in range(10): # Fetch up to 10000 results
+                api_params = {"page": "dapi", "s": "post", "q": "index", "limit": 1000, "pid": page, "tags": api_tags_str, "json": 1}
+                try:
+                    async with self.session.get(self.api_base_url, params=api_params) as response:
+                        if response.status == 200:
                             data = await response.json()
-                        except aiohttp.ContentTypeError:
-                            log.warning(
-                                f"{self.cog_name} API returned non-JSON for tags: {tags}, pid: {current_pid}, params: {api_params}"
-                            )
-                            data = None
-
-                        if data and isinstance(data, list):
-                            all_results.extend(data)
-                        elif isinstance(data, list) and len(data) == 0:
-                            pass
+                            if data and isinstance(data, list):
+                                all_fetched_results.extend(data)
+                                if len(data) < 1000: break
+                            else: break
                         else:
-                            log.warning(
-                                f"Unexpected API response format from {self.cog_name} (not list or empty list): {data} for tags: {tags}, pid: {current_pid}, params: {api_params}"
-                            )
-                            if pid_override is not None or limit_override is not None:
-                                return f"Unexpected API response format from {self.cog_name}: {response.status}"
-                    else:
-                        log.error(
-                            f"Failed to fetch {self.cog_name} data. HTTP Status: {response.status} for tags: {tags}, pid: {current_pid}, params: {api_params}"
-                        )
-                        return f"Failed to fetch data from {self.cog_name}. HTTP Status: {response.status}"
-            except aiohttp.ClientError as e:
-                log.error(
-                    f"aiohttp.ClientError in _fetch_posts_logic for {self.cog_name} tags {tags}: {e}"
-                )
-                return f"Network error fetching data from {self.cog_name}: {e}"
-            except Exception as e:
-                log.exception(
-                    f"Unexpected error in _fetch_posts_logic API call for {self.cog_name} tags {tags}: {e}"
-                )
-                return (
-                    f"An unexpected error occurred during {self.cog_name} API call: {e}"
-                )
+                            if page == 0: return f"Failed to fetch data from {self.cog_name}. HTTP Status: {response.status}"
+                            break
+                except Exception as e:
+                    log.error(f"Error during full fetch for {self.cog_name}: {e}")
+                    if page == 0: return f"Network error fetching data from {self.cog_name}: {e}"
+                    break
+            
+            source_data = all_fetched_results
+            if source_data:
+                await self.cache_manager.set(api_tags_str, source_data)
 
+        # --- 5. Final Filtering and Response ---
+        final_results = self._filter_results(source_data, original_positive_tags, original_negative_tags)
+
+        if not final_results:
+            return f"No results found from {self.cog_name} for the tags: `{tags}`."
+        
+        # This part is for internal calls that expect a list
         if pid_override is not None or limit_override is not None:
-            return all_results
+            return final_results
 
-        if all_results:
-            cache_key = tags.lower().strip()
-            await self.cache_manager.set(cache_key, all_results)
+        random_result = random.choice(final_results)
+        post_url = self.post_url_template.format(random_result["id"])
+        return (f"<{post_url}>\n{random_result['file_url']}", final_results)
 
-        if not all_results:
-            return f"No results found from {self.cog_name} for the given tags."
-        else:
-            random_result = random.choice(all_results)
-            post_url = self.post_url_template.format(random_result["id"])
-            return (f"<{post_url}>\n{random_result['file_url']}", all_results)
 
     class GelbooruButtons(ui.LayoutView):
         container = ui.Container()
@@ -581,5 +621,3 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                 )
             else:
                 await interaction.followup.send(response, ephemeral=ephemeral_error)
-
-
