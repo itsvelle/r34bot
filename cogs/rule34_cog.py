@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import typing  # Need this for Optional
 import logging
+import os
 from .gelbooru_watcher_base_cog import GelbooruWatcherBaseCog
 
 # Setup logger for this cog
@@ -21,7 +22,18 @@ class Rule34Cog(GelbooruWatcherBaseCog):
             main_command_name="rule34",  # For potential use in base class messages
             post_url_template="https://rule34.xxx/index.php?page=post&s=view&id={}",
         )
+        self.api_key = os.getenv("R34_API_KEY")
+        self.user_id = os.getenv("R34_USER_ID")
         # The __init__ in base class handles session creation and task starting.
+
+    def _get_extra_api_params(self) -> dict:
+        """Returns Rule34 specific API parameters."""
+        params = {}
+        if self.api_key:
+            params["api_key"] = self.api_key
+        if self.user_id:
+            params["user_id"] = self.user_id
+        return params
 
     # --- Slash Command ---
     @app_commands.allowed_contexts(dms=True, guilds=True, private_channels=True)

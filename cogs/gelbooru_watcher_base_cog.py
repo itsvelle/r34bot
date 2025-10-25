@@ -157,6 +157,13 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
             "zhu_yuan": "zenless_zone_zero",
         }
 
+    def _get_extra_api_params(self) -> dict:
+        """
+        Returns extra parameters for the API request.
+        This can be overridden by subclasses for site-specific parameters.
+        """
+        return {}
+
     async def cog_load(self):
         """Handles asynchronous setup when the cog is loaded."""
         log.info(f"Loading {self.cog_name}Cog...")
@@ -291,6 +298,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                         "tags": matched_cache_key,
                         "json": 1,
                     }
+                    api_params.update(self._get_extra_api_params())
                     try:
                         async with self.session.get(
                             self.api_base_url, params=api_params
@@ -348,6 +356,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                     "tags": api_tags_str,
                     "json": 1,
                 }
+                api_params.update(self._get_extra_api_params())
                 try:
                     async with self.session.get(
                         self.api_base_url, params=api_params
