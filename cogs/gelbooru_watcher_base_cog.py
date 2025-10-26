@@ -34,6 +34,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         command_group_name: str,
         main_command_name: str,
         post_url_template: str,
+        api_limit: int = 1000,
     ):
         self.bot = bot
         self.user_config_manager = bot.user_config_manager
@@ -44,6 +45,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         self.command_group_name = command_group_name
         self.main_command_name = main_command_name
         self.post_url_template = post_url_template
+        self.api_limit = api_limit
 
         self.session: typing.Optional[aiohttp.ClientSession] = None
 
@@ -199,7 +201,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                         "page": "dapi",
                         "s": "post",
                         "q": "index",
-                        "limit": 1000,
+                        "limit": self.api_limit,
                         "pid": page,
                         "tags": matched_cache_key,
                         "json": 1,
@@ -274,7 +276,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                     "page": "dapi",
                     "s": "post",
                     "q": "index",
-                    "limit": 1000,
+                    "limit": self.api_limit,
                     "pid": page,
                     "tags": api_tags_str,
                     "json": 1,
@@ -305,9 +307,9 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                                     f"Full fetch for {self.cog_name}: Received {len(data)} posts."
                                 )
                                 all_fetched_results.extend(data)
-                                if len(data) < 1000:
+                                if len(data) < self.api_limit:
                                     log.debug(
-                                        f"Full fetch for {self.cog_name}: Less than 1000 results, stopping pagination."
+                                        f"Full fetch for {self.cog_name}: Less than {self.api_limit} results, stopping pagination."
                                     )
                                     break
                             else:

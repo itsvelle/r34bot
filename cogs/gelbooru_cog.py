@@ -22,6 +22,7 @@ class GelbooruCog(GelbooruWatcherBaseCog):
             command_group_name="gelwatch",  # For potential use in base class messages
             main_command_name="gelbooru",  # For potential use in base class messages
             post_url_template="https://gelbooru.com/index.php?page=post&s=view&id={}",
+            api_limit=100,
         )
         self.api_key = os.getenv("GELBOORU_API_KEY")
         self.user_id = os.getenv("GELBOORU_USER_ID")
