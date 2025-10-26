@@ -62,6 +62,14 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
         """
         return {}
 
+    @abc.abstractmethod
+    def _parse_api_response(self, raw_response_text: str) -> list:
+        """
+        Abstract method to parse the raw API response text into a list of posts.
+        Subclasses must implement this to handle site-specific JSON structures.
+        """
+        pass
+
     async def cog_load(self):
         """Handles asynchronous setup when the cog is loaded."""
         log.info(f"Loading {self.cog_name}Cog...")
@@ -216,7 +224,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                                 log.debug(
                                     f"Incremental fetch raw response data for {self.cog_name}: {raw_response_text}"
                                 )
-                                data = json.loads(raw_response_text)
+                                data = self._parse_api_response(raw_response_text)
                                 if not data or not isinstance(data, list):
                                     log.debug(
                                         f"Incremental fetch for {self.cog_name}: No data or invalid data format."
@@ -291,7 +299,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                             log.debug(
                                 f"Full fetch raw response data for {self.cog_name}: {raw_response_text}"
                             )
-                            data = json.loads(raw_response_text)
+                            data = self._parse_api_response(raw_response_text)
                             if data and isinstance(data, list):
                                 log.debug(
                                     f"Full fetch for {self.cog_name}: Received {len(data)} posts."

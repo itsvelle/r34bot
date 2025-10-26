@@ -4,6 +4,7 @@ from discord import app_commands
 import typing  # Need this for Optional
 import logging
 import os
+import json # Added for parsing Rule34's JSON response
 from .gelbooru_watcher_base_cog import GelbooruWatcherBaseCog
 
 # Setup logger for this cog
@@ -34,6 +35,14 @@ class Rule34Cog(GelbooruWatcherBaseCog):
         if self.user_id:
             params["user_id"] = self.user_id
         return params
+
+    def _parse_api_response(self, raw_response_text: str) -> list:
+        """
+        Parses the raw JSON response text from Rule34.
+        Rule34 returns a list directly.
+        """
+        data = json.loads(raw_response_text)
+        return data if isinstance(data, list) else []
 
     # --- Slash Command ---
     @app_commands.allowed_contexts(dms=True, guilds=True, private_channels=True)
