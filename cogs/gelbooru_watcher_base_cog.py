@@ -299,13 +299,22 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                         "json": 1,
                     }
                     api_params.update(self._get_extra_api_params())
+                    log.debug(
+                        f"Incremental fetch for {self.cog_name}: URL={self.api_base_url}, Params={api_params}"
+                    )
                     try:
                         async with self.session.get(
                             self.api_base_url, params=api_params
                         ) as response:
+                            log.debug(
+                                f"Incremental fetch response status for {self.cog_name}: {response.status}"
+                            )
                             if response.status == 200:
                                 data = await response.json()
                                 if not data or not isinstance(data, list):
+                                    log.debug(
+                                        f"Incremental fetch for {self.cog_name}: No data or invalid data format."
+                                    )
                                     break
 
                                 page_new_posts = [
@@ -357,19 +366,37 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                     "json": 1,
                 }
                 api_params.update(self._get_extra_api_params())
+                log.debug(
+                    f"Full fetch for {self.cog_name}: URL={self.api_base_url}, Params={api_params}"
+                )
                 try:
                     async with self.session.get(
                         self.api_base_url, params=api_params
                     ) as response:
+                        log.debug(
+                            f"Full fetch response status for {self.cog_name}: {response.status}"
+                        )
                         if response.status == 200:
                             data = await response.json()
                             if data and isinstance(data, list):
+                                log.debug(
+                                    f"Full fetch for {self.cog_name}: Received {len(data)} posts."
+                                )
                                 all_fetched_results.extend(data)
                                 if len(data) < 1000:
+                                    log.debug(
+                                        f"Full fetch for {self.cog_name}: Less than 1000 results, stopping pagination."
+                                    )
                                     break
                             else:
+                                log.debug(
+                                    f"Full fetch for {self.cog_name}: No data or invalid data format."
+                                )
                                 break
                         else:
+                            log.warning(
+                                f"Full fetch for {self.cog_name}: Non-200 status code: {response.status}"
+                            )
                             if page == 0:
                                 return f"Failed to fetch data from {self.cog_name}. HTTP Status: {response.status}"
                             break
