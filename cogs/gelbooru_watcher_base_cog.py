@@ -15,7 +15,7 @@ from .cache_manager import CacheManager
 
 # Setup logger for this cog
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
+log.level = logging.INFO
 
 
 # Combined metaclass to resolve conflicts between CogMeta and ABCMeta
