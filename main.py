@@ -39,6 +39,7 @@ class SimpleBooruBot(commands.Bot):
         initial_extensions = [
             "cogs.rule34_cog",
             "cogs.safebooru_cog",
+            "cogs.gelbooru_cog",
             "cogs.settings_cog",
             "cogs.utils_cog",
         ]
