@@ -196,7 +196,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                 )
 
                 newly_fetched_posts = []
-                for page in range(10):  # Fetch up to 10 pages of new content
+                for page in range(100):  # Fetch up to 100 pages of new content
                     api_params = {
                         "page": "dapi",
                         "s": "post",
@@ -271,7 +271,7 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                 f"Cache miss for '{tags}' (key: '{api_tags_str}'). Performing full fetch."
             )
             all_fetched_results = []
-            for page in range(10):  # Fetch up to 10000 results
+            for page in range(10000):  # Fetch up to 100000 results
                 api_params = {
                     "page": "dapi",
                     "s": "post",
