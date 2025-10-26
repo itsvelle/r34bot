@@ -198,17 +198,25 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                     }
                     api_params.update(self._get_extra_api_params())
                     log.debug(
-                        f"Incremental fetch for {self.cog_name}: URL={self.api_base_url}, Params={api_params}"
+                        f"Incremental fetch for {self.cog_name}: Base URL={self.api_base_url}, Params={api_params}"
                     )
                     try:
                         async with self.session.get(
                             self.api_base_url, params=api_params
                         ) as response:
+                            full_url = str(response.url)
+                            log.debug(
+                                f"Incremental fetch for {self.cog_name}: Full URL={full_url}"
+                            )
                             log.debug(
                                 f"Incremental fetch response status for {self.cog_name}: {response.status}"
                             )
                             if response.status == 200:
-                                data = await response.json()
+                                raw_response_text = await response.text()
+                                log.debug(
+                                    f"Incremental fetch raw response data for {self.cog_name}: {raw_response_text}"
+                                )
+                                data = json.loads(raw_response_text)
                                 if not data or not isinstance(data, list):
                                     log.debug(
                                         f"Incremental fetch for {self.cog_name}: No data or invalid data format."
@@ -265,17 +273,25 @@ class GelbooruWatcherBaseCog(commands.Cog, abc.ABC, metaclass=GelbooruWatcherMet
                 }
                 api_params.update(self._get_extra_api_params())
                 log.debug(
-                    f"Full fetch for {self.cog_name}: URL={self.api_base_url}, Params={api_params}"
+                    f"Full fetch for {self.cog_name}: Base URL={self.api_base_url}, Params={api_params}"
                 )
                 try:
                     async with self.session.get(
                         self.api_base_url, params=api_params
                     ) as response:
+                        full_url = str(response.url)
+                        log.debug(
+                            f"Full fetch for {self.cog_name}: Full URL={full_url}"
+                        )
                         log.debug(
                             f"Full fetch response status for {self.cog_name}: {response.status}"
                         )
                         if response.status == 200:
-                            data = await response.json()
+                            raw_response_text = await response.text()
+                            log.debug(
+                                f"Full fetch raw response data for {self.cog_name}: {raw_response_text}"
+                            )
+                            data = json.loads(raw_response_text)
                             if data and isinstance(data, list):
                                 log.debug(
                                     f"Full fetch for {self.cog_name}: Received {len(data)} posts."
